@@ -1,8 +1,11 @@
+#!/usr/bin/env python
+# -*- coding:utf-8 -*-
 import os
 import os.path
 import re
 import urllib2
-
+from Tkinter import *
+import tkFileDialog
 
 class Picture(object):
 
@@ -100,59 +103,86 @@ class Article(object):
             os.mkdir(self.article_pic_dir)
 
 
-def find_sub_path(path):
-    article_list = []
+class XTDirectoryPicker(object):
 
-    temp_files = os.listdir(path)
+    def __init__(self):
+        # ui
+        self.root = Tk()
+        self.root.title("XTImageDownloader")
+        self.path = StringVar()
+        self.title = StringVar()
+        self.title.set("请选择Markdown文件所在文件夹")
 
-    for temp_file in temp_files:
-        # full path
-        full_path = os.path.join(path, temp_file)
+        Label(self.root, textvariable=self.title).grid(row=0, column=1)
+        Label(self.root, text="文件夹路径:").grid(row=1, column=0)
+        Entry(self.root, textvariable=self.path).grid(row=1, column=1)
+        Button(self.root, text="选择路径", command=self.select_path).grid(row=1, column=2)
+        self.root.mainloop()
 
-        # find .md
-        if os.path.isfile(full_path) and os.path.splitext(full_path)[1] == ".md":
-            article = Article(full_path)
-            article_list.append(article)
-        # find dir
-        elif os.path.isdir(full_path):
-            article_list.extend(find_sub_path(full_path))
+        # other
 
-    return article_list
+    def select_path(self):
+        self.path.set(tkFileDialog.askdirectory())
+        if self.path.get() != "":
+            Button(self.root, text="开始搜索", command=self.find_markdown_pic).grid(row=2, column=1)
+            return self.path
+
+    def find_sub_path(self, path):
+        article_list = []
+
+        temp_files = os.listdir(path)
+
+        for temp_file in temp_files:
+            # full path
+            full_path = os.path.join(path, temp_file)
+
+            # find .md
+            if os.path.isfile(full_path) and os.path.splitext(full_path)[1] == ".md":
+                article = Article(full_path)
+                article_list.append(article)
+            # find dir
+            elif os.path.isdir(full_path):
+                article_list.extend(self.find_sub_path(full_path))
+
+        return article_list
+
+    def find_markdown_pic(self):
+        article_list = self.find_sub_path(self.path.get())
+
+        all_pic_count = 0
+        current_pic_index = 0
+        download_error_list = []
+
+        for article in article_list:
+            all_pic_count += len(article.pic_list)
+
+        # update ui
+        self.change_title(all_pic_count, current_pic_index);
+        return
+        for article in article_list:
+            for pic in article.pic_list:
+                # download pic
+                error = pic.start_download_pic()
+                if error is not None and len(error) > 0:
+                    download_error_list.append(pic)
+
+                current_pic_index += 1
+                print('finish:' + str(current_pic_index) + '/' + str(all_pic_count))
+
+        print("-----------------------------------")
+        print("some pic download failure:")
+        for pic in download_error_list:
+            print("")
+            print("name:" + pic.name)
+            print("url:" + pic.url)
+            print("error_reason:" + pic.error_reason)
+
+    def change_title(self, total_num,current_num):
+        self.title.set("已完成" + str(current_num) + "/" + str(total_num))
 
 
-def find_markdown_pic(root_path):
-    article_list = find_sub_path(root_path)
-
-    all_pic_count = 0
-    current_pic_index = 0
-    download_error_list = []
-
-    for article in article_list:
-        all_pic_count += len(article.pic_list)
-
-    for article in article_list:
-        for pic in article.pic_list:
-            # download pic
-            error = pic.start_download_pic()
-            if error is not None and len(error) > 0:
-                download_error_list.append(pic)
-
-            current_pic_index += 1
-            print('finish:' + str(current_pic_index) + '/' + str(all_pic_count))
-
-    print("-----------------------------------")
-    print("some pic download failure:")
-    for pic in download_error_list:
-        print("")
-        print("name:" + pic.name)
-        print("url:" + pic.url)
-        print("error_reason:" + pic.error_reason)
-
-
-# root_path = input()
-# FindPaths(root_path)
-find_markdown_pic("/Users/xietao/Desktop/files/user-1319710-1513223040")
 
 
 
 
+dir_picker = XTDirectoryPicker()
