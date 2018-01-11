@@ -7,6 +7,7 @@ import urllib2
 from Tkinter import *
 import tkFileDialog
 
+
 class Picture(object):
 
     def __init__(self, name, url, dir_path, index):
@@ -37,7 +38,7 @@ class Picture(object):
 
         request = urllib2.Request(self.url, None, header)
         try:
-            response = urllib2.urlopen(request, timeout=10)
+            response = urllib2.urlopen(request, timeout=3)
         except Exception, error:
             print ('pic cannot download:' + self.url)
             self.error_reason = str(error)
@@ -113,6 +114,7 @@ class XTDirectoryPicker(object):
         self.title = StringVar()
         self.title.set("请选择Markdown文件所在文件夹")
 
+        self.list_box = None
         Label(self.root, textvariable=self.title).grid(row=0, column=1)
         Label(self.root, text="文件夹路径:").grid(row=1, column=0)
         Entry(self.root, textvariable=self.path).grid(row=1, column=1)
@@ -124,7 +126,9 @@ class XTDirectoryPicker(object):
     def select_path(self):
         self.path.set(tkFileDialog.askdirectory())
         if self.path.get() != "":
-            Button(self.root, text="开始搜索", command=self.find_markdown_pic).grid(row=2, column=1)
+            Button(self.root, text="开始搜索并下载", command=self.find_markdown_pic).grid(row=2, column=1)
+            Label(self.root, text="(占用主线程，请耐心等待...)").grid(row=3, column=1)
+
             return self.path
 
     def find_sub_path(self, path):
@@ -147,6 +151,7 @@ class XTDirectoryPicker(object):
         return article_list
 
     def find_markdown_pic(self):
+
         article_list = self.find_sub_path(self.path.get())
 
         all_pic_count = 0
@@ -158,7 +163,7 @@ class XTDirectoryPicker(object):
 
         # update ui
         self.change_title(all_pic_count, current_pic_index);
-        return
+
         for article in article_list:
             for pic in article.pic_list:
                 # download pic
@@ -168,6 +173,7 @@ class XTDirectoryPicker(object):
 
                 current_pic_index += 1
                 print('finish:' + str(current_pic_index) + '/' + str(all_pic_count))
+                self.change_title(all_pic_count, current_pic_index)
 
         print("-----------------------------------")
         print("some pic download failure:")
@@ -177,12 +183,30 @@ class XTDirectoryPicker(object):
             print("url:" + pic.url)
             print("error_reason:" + pic.error_reason)
 
-    def change_title(self, total_num,current_num):
+        self.print_error(download_error_list)
+
+    def change_title(self, total_num, current_num):
         self.title.set("已完成" + str(current_num) + "/" + str(total_num))
 
+    def print_error(self, download_error_list):
+        Label(self.root, text="部分图片下载失败:").grid(row=4, column=1)
 
+        # listbox
+        self.list_box = Listbox(self.root)
+        for pic in download_error_list:
+            self.list_box.insert(END, pic.url + pic.error_reason)
+        self.list_box.grid(row=5, column=0, columnspan=3, sticky=W+E+N+S)
 
-
+        # scrollbar
+        scr1 = Scrollbar(self.root)
+        self.list_box.configure(yscrollcommand=scr1.set)
+        scr1['command'] = self.list_box.yview
+        scr1.grid(row=5, column=4, sticky=W+E+N+S)
+        # horizontal scrollbar
+        scr2 = Scrollbar(self.root, orient='horizontal')
+        self.list_box.configure(xscrollcommand=scr2.set)
+        scr2['command'] = self.list_box.xview
+        scr2.grid(row=6, column=0, columnspan=3, sticky=W+E+N+S)
 
 
 dir_picker = XTDirectoryPicker()
