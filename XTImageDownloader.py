@@ -18,33 +18,39 @@ class Picture(object):
         self.dir_path = dir_path
         self.error_reason = None
 
-    def start_download_pic(self):
+    def start_download_pic(self, download_pic_callback):
         pic_path = self.build_pic_name()
 
-        # return
+        # 已存在
         if os.path.exists(pic_path):
             print ('pic has existed:' + self.url)
             self.error_reason = "pic has existed:"
-            return self.error_reason
+            download_pic_callback(self)
+            return
 
+        # 图片链接前缀不包含http
         if not self.url.startswith("http"):
             print ('pic has invalid url:' + self.url)
             self.error_reason = "pic has invalid url"
-            return self.error_reason
+            download_pic_callback(self)
+            return
 
         header = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.114 Safari/537.36',
             'Cookie': 'AspxAutoDetectCookieSupport=1',
         }
 
+        # 下载图片
         request = urllib2.Request(self.url, None, header)
         try:
-            response = urllib2.urlopen(request, timeout=3)
+            response = urllib2.urlopen(request, timeout=10)
         except Exception, error:
             print ('pic cannot download:' + self.url)
             self.error_reason = str(error)
-            return self.error_reason
+            download_pic_callback(self)
+            return
 
+        # 保存图片
         try:
             fp = open(pic_path, 'wb')
             fp.write(response.read())
@@ -52,7 +58,10 @@ class Picture(object):
         except IOError, error:
             print(error)
             self.error_reason = str(error)
-            return self.error_reason
+            download_pic_callback(self)
+            return
+        # finish download this pic
+        download_pic_callback(self)
 
     def build_pic_name(self):
         pic_url = self.url.split("?")[0]
@@ -131,6 +140,11 @@ class Directory(object):
 class XTDirectoryPicker(object):
 
     def __init__(self):
+        # data
+        self.download_error_list = []
+        self.all_pic_count = 0
+        self.current_pic_index = 0
+
         # ui
         self.root = Tk()
         self.root.title("XTImageDownloader")
@@ -145,42 +159,45 @@ class XTDirectoryPicker(object):
         Button(self.root, text="选择路径", command=self.select_path).grid(row=1, column=2)
         self.root.mainloop()
 
-        # other
-
     def select_path(self):
         self.path.set(tkFileDialog.askdirectory())
         if self.path.get() != "":
             Button(self.root, text="开始搜索并下载", command=self.start_search_dir).grid(row=2, column=1)
-            Label(self.root, text="(占用主线程，请耐心等待...)").grid(row=3, column=1)
-
             return self.path
 
     def start_search_dir(self):
+        self.all_pic_count = 0
+        self.current_pic_index = 0
+        self.download_error_list = []
+        # get article list
         article_list = Directory.find_sub_path(self.path.get())
 
-        all_pic_count = 0
-        current_pic_index = 0
-        download_error_list = []
-
-        for article in article_list:
-            all_pic_count += len(article.pic_list)
-
         # update ui
-        self.change_title(all_pic_count, current_pic_index);
+        for article in article_list:
+            self.all_pic_count += len(article.pic_list)
+        self.change_title(self.all_pic_count, self.current_pic_index);
 
         # download pic
         for article in article_list:
             for pic in article.pic_list:
-                # download pic
-                error = pic.start_download_pic()
-                if error is not None and len(error) > 0:
-                    download_error_list.append(pic)
+                # start download pic
+                thread = threading.Thread(target=pic.start_download_pic, args=(self.download_pic_callback,))
+                thread.start()
 
-                current_pic_index += 1
-                print('finish:' + str(current_pic_index) + '/' + str(all_pic_count))
-                self.change_title(all_pic_count, current_pic_index)
+    def download_pic_callback(self, pic):
+        # save error
+        if pic.error_reason is not None and len(pic.error_reason) > 0:
+            self.download_error_list.append(pic)
 
-        self.print_error(download_error_list)
+        self.current_pic_index += 1
+
+        # update ui
+        print('finish:' + str(self.current_pic_index) + '/' + str(self.all_pic_count))
+        self.change_title(self.all_pic_count, self.current_pic_index)
+
+        # finish all download
+        if self.all_pic_count == self.current_pic_index:
+            self.print_error(self.download_error_list)
 
     def change_title(self, total_num, current_num):
         self.title.set("已完成" + str(current_num) + "/" + str(total_num))
