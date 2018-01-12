@@ -6,6 +6,7 @@ import re
 import urllib2
 from Tkinter import *
 import tkFileDialog
+import threading
 
 
 class Picture(object):
@@ -104,6 +105,29 @@ class Article(object):
             os.mkdir(self.article_pic_dir)
 
 
+class Directory(object):
+
+    @classmethod
+    def find_sub_path(cls, path):
+        article_list = []
+
+        temp_files = os.listdir(path)
+
+        for temp_file in temp_files:
+            # full path
+            full_path = os.path.join(path, temp_file)
+
+            # find .md
+            if os.path.isfile(full_path) and os.path.splitext(full_path)[1] == ".md":
+                article = Article(full_path)
+                article_list.append(article)
+            # find dir
+            elif os.path.isdir(full_path):
+                article_list.extend(cls.find_sub_path(full_path))
+
+        return article_list
+
+
 class XTDirectoryPicker(object):
 
     def __init__(self):
@@ -126,33 +150,13 @@ class XTDirectoryPicker(object):
     def select_path(self):
         self.path.set(tkFileDialog.askdirectory())
         if self.path.get() != "":
-            Button(self.root, text="开始搜索并下载", command=self.find_markdown_pic).grid(row=2, column=1)
+            Button(self.root, text="开始搜索并下载", command=self.start_search_dir).grid(row=2, column=1)
             Label(self.root, text="(占用主线程，请耐心等待...)").grid(row=3, column=1)
 
             return self.path
 
-    def find_sub_path(self, path):
-        article_list = []
-
-        temp_files = os.listdir(path)
-
-        for temp_file in temp_files:
-            # full path
-            full_path = os.path.join(path, temp_file)
-
-            # find .md
-            if os.path.isfile(full_path) and os.path.splitext(full_path)[1] == ".md":
-                article = Article(full_path)
-                article_list.append(article)
-            # find dir
-            elif os.path.isdir(full_path):
-                article_list.extend(self.find_sub_path(full_path))
-
-        return article_list
-
-    def find_markdown_pic(self):
-
-        article_list = self.find_sub_path(self.path.get())
+    def start_search_dir(self):
+        article_list = Directory.find_sub_path(self.path.get())
 
         all_pic_count = 0
         current_pic_index = 0
@@ -164,6 +168,7 @@ class XTDirectoryPicker(object):
         # update ui
         self.change_title(all_pic_count, current_pic_index);
 
+        # download pic
         for article in article_list:
             for pic in article.pic_list:
                 # download pic
@@ -175,6 +180,13 @@ class XTDirectoryPicker(object):
                 print('finish:' + str(current_pic_index) + '/' + str(all_pic_count))
                 self.change_title(all_pic_count, current_pic_index)
 
+        self.print_error(download_error_list)
+
+    def change_title(self, total_num, current_num):
+        self.title.set("已完成" + str(current_num) + "/" + str(total_num))
+
+    def print_error(self, download_error_list):
+        # python log
         print("-----------------------------------")
         print("some pic download failure:")
         for pic in download_error_list:
@@ -183,14 +195,9 @@ class XTDirectoryPicker(object):
             print("url:" + pic.url)
             print("error_reason:" + pic.error_reason)
 
-        self.print_error(download_error_list)
-
-    def change_title(self, total_num, current_num):
-        self.title.set("已完成" + str(current_num) + "/" + str(total_num))
-
-    def print_error(self, download_error_list):
         Label(self.root, text="部分图片下载失败:").grid(row=4, column=1)
 
+        # GUI
         # listbox
         self.list_box = Listbox(self.root)
         for pic in download_error_list:
