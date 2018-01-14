@@ -144,14 +144,14 @@ class XTDirectoryPicker(object):
         self.download_error_list = []
         self.all_pic_count = 0
         self.current_pic_index = 0
-
+        self.thread_lock = threading.Lock()
+        self.search_button = None
         # ui
         self.root = Tk()
         self.root.title("XTImageDownloader")
         self.path = StringVar()
         self.title = StringVar()
         self.title.set("请选择Markdown文件所在文件夹")
-
         self.list_box = None
         Label(self.root, textvariable=self.title).grid(row=0, column=1)
         Label(self.root, text="文件夹路径:").grid(row=1, column=0)
@@ -162,10 +162,14 @@ class XTDirectoryPicker(object):
     def select_path(self):
         self.path.set(tkFileDialog.askdirectory())
         if self.path.get() != "":
-            Button(self.root, text="开始搜索并下载", command=self.start_search_dir).grid(row=2, column=1)
+            self.search_button = Button(self.root, text="开始搜索并下载", command=self.start_search_dir)
+            self.search_button.grid(row=2, column=1)
             return self.path
 
     def start_search_dir(self):
+        self.search_button['state'] = DISABLED
+        self.search_button['text'] = "正在下载..."
+        
         self.all_pic_count = 0
         self.current_pic_index = 0
         self.download_error_list = []
@@ -185,6 +189,8 @@ class XTDirectoryPicker(object):
                 thread.start()
 
     def download_pic_callback(self, pic):
+        # lock
+        self.thread_lock.acquire()
         # save error
         if pic.error_reason is not None and len(pic.error_reason) > 0:
             self.download_error_list.append(pic)
@@ -197,7 +203,11 @@ class XTDirectoryPicker(object):
 
         # finish all download
         if self.all_pic_count == self.current_pic_index:
+            self.search_button['text'] = "下载完成"
             self.print_error(self.download_error_list)
+
+        # unlock
+        self.thread_lock.release()
 
     def change_title(self, total_num, current_num):
         self.title.set("已完成" + str(current_num) + "/" + str(total_num))
@@ -218,7 +228,7 @@ class XTDirectoryPicker(object):
         # listbox
         self.list_box = Listbox(self.root)
         for pic in download_error_list:
-            self.list_box.insert(END, pic.url + pic.error_reason)
+            self.list_box.insert(END, pic.url + " -> " + pic.error_reason)
         self.list_box.grid(row=5, column=0, columnspan=3, sticky=W+E+N+S)
 
         # scrollbar
