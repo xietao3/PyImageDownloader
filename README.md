@@ -1,6 +1,8 @@
 # Python 萌新 - 实现 Markdown 图片下载器
 
 
+![图片来自网络](http://upload-images.jianshu.io/upload_images/1319710-1aabe51b7e2103aa.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
+
 >简书支持打包下载所有文章功能，可以方便作者转移或保存。但是图片不支持自动下载，最近在学Python，便写了一个md图片下载器。
 
 # 目标
@@ -13,9 +15,9 @@
 
 **先上最终效果:**
 
-![下载过程](https://user-gold-cdn.xitu.io/2018/1/20/1610f76e37ddcb0f?w=350&h=350&f=gif&s=4808535)
+![下载过程](http://upload-images.jianshu.io/upload_images/1319710-127db2a56d226360.gif?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
-![下载完成](https://user-gold-cdn.xitu.io/2018/1/20/1610f76e37ceb442?w=700&h=397&f=gif&s=4342048)
+![下载完成](http://upload-images.jianshu.io/upload_images/1319710-5cabb727b08a014b.gif?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 
 # 实现步骤
@@ -26,7 +28,7 @@
 4. 下载报告与GUI。
 5. Python 打包工具。
 
-![准备开工](https://user-gold-cdn.xitu.io/2018/1/20/1610f76e39911bca?w=200&h=200&f=gif&s=19134)
+![准备开工](http://upload-images.jianshu.io/upload_images/1319710-836030e0e5407304.gif?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 ## 1. 搜索文件夹中md文件
 
@@ -203,7 +205,7 @@ a. 本来 ``XTImageDownloader`` 和 ``GUI`` 应该分开，但是对 ``Tkinter``
 
 这部分代码主要是 **选择文件夹** 和 **开始搜索并下载** 的 UI 及逻辑处理。
 
-![选择文件夹](https://user-gold-cdn.xitu.io/2018/1/20/1610f76e37dce3dd?w=800&h=464&f=gif&s=4525547)
+![选择文件夹](http://upload-images.jianshu.io/upload_images/1319710-8dc42ba95b02bbbb.gif?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 ```
 class XTImageDownloader(object):
@@ -265,7 +267,7 @@ class XTImageDownloader(object):
 
 b. 开启异步线程下载图片，回调函数作为入参传入。
 
-![下载图片](https://user-gold-cdn.xitu.io/2018/1/20/1610f76e37ddcb0f?w=350&h=350&f=gif&s=4808535)
+![下载图片](http://upload-images.jianshu.io/upload_images/1319710-127db2a56d226360.gif?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
 
 ```
   // 异步下载
@@ -360,7 +362,7 @@ import threading
 
 ## 5. Python 打包工具
 
-![最终效果](https://user-gold-cdn.xitu.io/2018/1/20/1610f76e37ccb441?w=440&h=452&f=gif&s=1038378)
+![最终效果](http://upload-images.jianshu.io/upload_images/1319710-aa888cebfdb37e99.gif?imageMogr2/auto-orient/strip%7CimageView2/2/w/440)
 
 
 这部分主要是讲如何把 Python 脚本打包打包成可以在 Mac 上运行的应用。
@@ -412,7 +414,7 @@ $ python setup.py py2app
 
 ### [DMG Canvas](http://www.araelium.com/dmgcanvas)
 
-![DMGCanvas](https://user-gold-cdn.xitu.io/2018/1/20/1610f76e5fc72cac?w=140&h=140&f=jpeg&s=3987)
+![DMGCanvas](http://upload-images.jianshu.io/upload_images/1319710-a6044f67873d682a.jpg?imageMogr2/auto-orient/strip%7CimageView2/2/w/140)
 
 DMG Canvas 可以将 Mac 应用打包成 DMG 镜像文件，并且傻瓜式操作。
 
@@ -421,4 +423,6 @@ DMG Canvas 可以将 Mac 应用打包成 DMG 镜像文件，并且傻瓜式操�
 
 
 **最后贴上[Demo](https://github.com/xietao3/PyImageDownloader)，本人 Python 2.7 环境下运行的， Python 3以上是无法运行的。**
+
+
 
