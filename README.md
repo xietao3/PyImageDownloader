@@ -1,4 +1,4 @@
-# PyImageDownloader
+# Python 萌新 - 实现 Markdown 图片下载器
 
 
 >简书支持打包下载所有文章功能，可以方便作者转移或保存。但是图片不支持自动下载，最近在学Python，便写了一个md图片下载器。
